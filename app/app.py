@@ -211,4 +211,4 @@ def lambda_handler(event, context):
 
         else:
             print(time.strftime(
-                "%H:%M:%S") + f": No new entry found for {tweet_author}. Waiting for {SLEEP_TIME} seconds before next check ")
+                "%H:%M:%S") + f": No new entry found for {tweet_author}. Last seen entry ID: {last_seen_id}")
