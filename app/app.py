@@ -91,9 +91,11 @@ def check_entry(entry_id):
     return False
 
 
-def lambda_handler():  # pylint: disable=inconsistent-return-statements, too-many-locals, too-many-branches, too-many-statements
+def lambda_handler(context, event):  # pylint: disable=inconsistent-return-statements, too-many-locals, too-many-branches, too-many-statements, unused-argument
     """
     The main AWS lambda function handler.
+    :param context: The context object. This is not used.
+    :param event: The event object. This is not used.
     :return: 200 if the function executed successfully, 500 otherwise
     """
     for feed_url in RSS_FEEDS:
@@ -271,4 +273,4 @@ def lambda_handler():  # pylint: disable=inconsistent-return-statements, too-man
                 + f": No new entry found for {tweet_author}. Last seen entry ID: {last_seen_id}"
             )
 
-            return {"statusCode": 200, "body": json.dumps("Ran successfully!")}
+    return {"statusCode": 200, "body": json.dumps("Ran successfully!")}
