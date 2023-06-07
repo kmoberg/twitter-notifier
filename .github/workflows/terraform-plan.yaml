@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    working-directory: terraform/
 
     steps:
     - name: Checkout code
@@ -18,11 +17,14 @@ jobs:
       uses: hashicorp/setup-terraform@v2
 
     - name: Terraform Init
+      working-directory: terraform/
       run: terraform init
 
     # generate Terraform Plan and store in .tfplan file
     - name: Terraform Plan
+      working-directory: terraform/
       run: terraform plan -out:terraform.tfplan
+      
 
     # commit Terraform plan if running on 'main' branch
     # commit is made to the 'terraform-plan' branch
