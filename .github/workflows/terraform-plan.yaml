@@ -1,38 +1,22 @@
 name: Terraform Plan
 
-# configure to run on merges to 'main' branch
-on:
-  push:
-    branches: [ main ]
+on: [pull_request]
+
+permissions:
+  contents: read
+  pull-requests: write
 
 jobs:
-  deploy:
+  plan:
     runs-on: ubuntu-latest
-
+    name: Create terraform plan
+    env:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}            
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-
-    - name: Terraform Init
-      working-directory: terraform/
-      run: terraform init
-
-    # generate Terraform Plan and store in .tfplan file
-    - name: Terraform Plan
-      working-directory: terraform/
-      run: terraform plan -out:terraform.tfplan
-      
-
-    # commit Terraform plan if running on 'main' branch
-    # commit is made to the 'terraform-plan' branch
-    - name: Commit Terraform Plan for Approval
-      if: github.ref == 'refs/heads/main'
-      uses: peter-evans/create-pull-request@v4
-      with:
-        commit-message: 'Terraform Plan'
-        branch: 'terraform-plan'
-        base: 'main'
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - name: terraform plan
+        uses: dflook/terraform-plan@v1
+        with:
+          path: my-terraform-config
