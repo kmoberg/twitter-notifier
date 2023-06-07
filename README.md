@@ -32,13 +32,17 @@ of storage in DynamoDB is as of writing, free.
 ### Using Terraform
 1. Install [Terraform](https://www.terraform.io/downloads.html)
 2. `cd` into the `terraform` directory
-3. Run `terraform init` in the `terraform` directory
-4. Run `terraform apply` in the `terraform` directory
-5. Done!
-6. (Optional) Run `terraform destroy` to remove all resources created by Terraform
-7. (Optional) Run `terraform fmt` to format the code
-8. (Optional) Run `terraform validate` to validate the code
-9. (Optional) Run `terraform plan` to see what will be created/destroyed
+3. Rename the `example.tfvars` file to `terraform.tfvars` and fill in the values for your account.
+4. Run `terraform init` in the `terraform` directory
+5. Run `terraform apply` in the `terraform` directory
+6. With the infrastructure created, you now to add the RSS feeds you want to follow to the DynamoDB table
+   - You can do this manually, or by running `db/add_rss_feeds.py`
+   - You must have the AWS CLI installed and configured for this to work
+7. Done!
+8. (Optional) Run `terraform destroy` to remove all resources created by Terraform
+9. (Optional) Run `terraform fmt` to format the code
+10. (Optional) Run `terraform validate` to validate the code
+11. (Optional) Run `terraform plan` to see what will be created/destroyed
 
 ### Manually
 1. From the console, create a new AWS Lambda function
