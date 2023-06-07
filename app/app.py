@@ -12,6 +12,8 @@ import os
 import time
 
 import boto3
+from boto3.dynamodb.conditions import Key
+
 import feedparser
 
 import requests
@@ -26,14 +28,14 @@ ssm = boto3.client("ssm")
 # Select the dynamodb table 'rss_entries'
 table = dynamodb.Table("rss_entries")
 
+# Select the dynamodb table 'user_feeds'
+user_feeds_table = dynamodb.Table("user_feeds")
+
 # Set the sleep time between checks
 SLEEP_TIME = 60
 
-# List of RSS feeds to check
-RSS_FEEDS = [
-    "https://nitter.net/politietsorvest/rss",
-    "https://nitter.net/HRSSorNorge/rss",
-]
+# FIXME - Set the user for whom to check RSS feeds
+USER = "kmoberg"
 
 
 def get_parameter(name):
@@ -91,6 +93,18 @@ def check_entry(entry_id):
     return False
 
 
+def get_user_feeds(user):
+    """
+    Retrieve the feeds associated with a user from the 'user_feeds' table.
+    :param user: The user for whom to retrieve the feeds.
+    :return: A list of feed URLs.
+    """
+    response = user_feeds_table.query(
+        KeyConditionExpression=Key('user').eq(user)
+    )
+    return [item['feed_url'] for item in response['Items']]
+
+
 def lambda_handler(context, event):  # pylint: disable=inconsistent-return-statements, too-many-locals, too-many-branches, too-many-statements, unused-argument
     """
     The main AWS lambda function handler.
@@ -98,7 +112,10 @@ def lambda_handler(context, event):  # pylint: disable=inconsistent-return-state
     :param event: The event object. This is not used.
     :return: 200 if the function executed successfully, 500 otherwise
     """
-    for feed_url in RSS_FEEDS:
+
+    # Get the feeds for the user
+    rss_feeds = get_user_feeds(USER)
+    for feed_url in rss_feeds:
         # Get the current entries from the RSS feed
         feed = feedparser.parse(feed_url)
 
