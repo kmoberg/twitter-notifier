@@ -1,6 +1,15 @@
 ### Custom
 aws-layers/
 
+terraform.tfvars
+*.tfstate
+lambda.zip
+layers.zip
+lambda_layer.zip
+*.tfstate*
+.terraform/
+terraform/lambda_layer/
+
 
 ### IntelliJ & Python template
 ### Standard Ignore Template
