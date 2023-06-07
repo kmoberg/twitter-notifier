@@ -31,13 +31,14 @@ of storage in DynamoDB is as of writing, free.
 ## Setup
 ### Using Terraform
 1. Install [Terraform](https://www.terraform.io/downloads.html)
-2. Run `terraform init` in the root of the project
-3. Run `terraform apply` in the root of the project
-4. Done!
-5. (Optional) Run `terraform destroy` to remove all resources created by Terraform
-6. (Optional) Run `terraform fmt` to format the code
-7. (Optional) Run `terraform validate` to validate the code
-8. (Optional) Run `terraform plan` to see what will be created/destroyed
+2. `cd` into the `terraform` directory
+3. Run `terraform init` in the `terraform` directory
+4. Run `terraform apply` in the `terraform` directory
+5. Done!
+6. (Optional) Run `terraform destroy` to remove all resources created by Terraform
+7. (Optional) Run `terraform fmt` to format the code
+8. (Optional) Run `terraform validate` to validate the code
+9. (Optional) Run `terraform plan` to see what will be created/destroyed
 
 ### Manually
 1. From the console, create a new AWS Lambda function
