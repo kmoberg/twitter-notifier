@@ -96,9 +96,14 @@ resource "aws_iam_policy" "lambda_exec_policy" {
       "Effect": "Allow",
       "Action": [
         "dynamodb:GetItem",
-        "dynamodb:PutItem"
+        "dynamodb:PutItem",
+        "dynamodb:Query",
+        "dynamodb:Scan"
       ],
-      "Resource": "arn:aws:dynamodb:${var.region}:${var.account_id}:table/rss_entries"
+      "Resource": [
+                "arn:aws:dynamodb:${var.region}:${var.account_id}:table/user_feeds",
+                "arn:aws:dynamodb:${var.region}:${var.account_id}:table/rss_entries"
+            ]
     }
   ]
 }
@@ -178,6 +183,26 @@ resource "aws_dynamodb_table" "rss_entries" {
     type = "S"
   }
 }
+
+resource "aws_dynamodb_table" "user_feeds" {
+  name         = "user_feeds"
+  billing_mode = "PAY_PER_REQUEST"
+
+  attribute {
+    name = "user"
+    type = "S"
+  }
+
+  attribute {
+    name = "feed_url"
+    type = "S"
+  }
+
+  hash_key  = "user"
+  range_key = "feed_url"
+
+}
+
 
 resource "aws_ssm_parameter" "pushover_user_key" {
   name  = "/pushover_user_key"
