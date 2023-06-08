@@ -294,3 +294,10 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+/terraform/add_feed_lambda.zip
+/terraform/add_keyword_lambda.zip
+/terraform/app_lambda.zip
+/terraform/common_lambda.zip
+/terraform/common_lambda_layer.zip
+/terraform/get_tweets_lambda.zip
+/terraform/remove_keyword_lambda.zip
