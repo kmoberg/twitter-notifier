@@ -1,19 +1,11 @@
-"""
-Lambda function for checking new entries in RSS feeds.
-This function is triggered by a CloudWatch event every minute.
-The function checks for new entries in the RSS feeds specified in the RSS_FEEDS list.
-If a new entry is found, it will be added to the DynamoDB table 'rss_entries'.
-The function also checks for keywords in the entry title, and if any of the keywords are
-found, the function will not add the entry to the database.
-"""
-
 import json
 import os
 import time
+import random
+
+import pync
 
 import boto3
-from boto3.dynamodb.conditions import Key
-
 import feedparser
 
 import requests
@@ -28,14 +20,14 @@ ssm = boto3.client("ssm")
 # Select the dynamodb table 'rss_entries'
 table = dynamodb.Table("rss_entries")
 
-# Select the dynamodb table 'user_feeds'
-user_feeds_table = dynamodb.Table("user_feeds")
-
 # Set the sleep time between checks
 SLEEP_TIME = 60
 
-# FIXME - Set the user for whom to check RSS feeds
-USER = "kmoberg"
+# List of RSS feeds to check
+RSS_FEEDS = [
+    "https://nitter.net/politietsorvest/rss",
+    "https://nitter.net/HRSSorNorge/rss",
+]
 
 
 def get_parameter(name):
@@ -48,28 +40,34 @@ def get_parameter(name):
     return response["Parameter"]["Value"]
 
 
-def notify(
-    title: str,
-    message: str,
-    user_key: str = get_parameter("pushover_user_key"),
-    api_token: str = get_parameter("pushover_api_token"),
-):
+def notify_local(
+        title: object,
+        text: object,
+        subtitle: object = None,
+        sound: object = "hero",
+        app_icon: object = "https://tweet-notifications.s3.eu-north-1.amazonaws.com/tweet.png",
+        tweet_url: object = None,
+) -> object:
     """
-    Sends a push notification via Pushover.
-    :param title: The title of the notification.
-    :param message: The body of the notification.
-    :param user_key: The user key obtained from the Pushover app.
-    :param api_token: The API token for your Pushover application.
+    Uses macOS's built-in notification system to send a notification. Runs an AppleScript command to send the
+    notification. See the static "CMD" for the AppleScript command.
+    :param title: The title of the notification - is displayed in bold text at the top of the notification
+    :param text: The text of the notification - is displayed below the title
+    :param subtitle: The subtitle of the notification - is displayed below the title - usually the date and time
+    :param sound: Whether to play a specific sound when sending the notification - defaults to "default"
+    :param app_icon: Set the icon of the notification - defaults to the Twitter logo
+    :param tweet_url: The URL to the tweet to open when clicking the notification
+    :return: None
     """
-
-    data = {"token": api_token, "user": user_key, "title": title, "message": message}
-
-    response = requests.post(
-        "https://api.pushover.net/1/messages.json", data=data, timeout=5
+    pync.notify(
+        message=text,
+        title=title,
+        subtitle=subtitle,
+        sound=sound,
+        open=tweet_url,
+        appIcon=app_icon,
+        sender="org.mozilla.firefoxdeveloperedition",
     )
-
-    if response.status_code != 200:
-        print(f"Failed to send push notification: {response.text}")
 
 
 def check_entry(entry_id):
@@ -86,36 +84,15 @@ def check_entry(entry_id):
         if "Item" in response:
             return True
 
-    except Exception as error:  # pylint: disable=broad-except
-        print(f"Encountered an error while checking entry: {error}")
+    except Exception as e:
+        print(f"Encountered an error while checking entry: {e}")
 
     # If the item doesn't exist or any exception occurred, return False
     return False
 
 
-def get_user_feeds(user):
-    """
-    Retrieve the feeds associated with a user from the 'user_feeds' table.
-    :param user: The user for whom to retrieve the feeds.
-    :return: A list of feed URLs.
-    """
-    response = user_feeds_table.query(
-        KeyConditionExpression=Key('user').eq(user)
-    )
-    return [item['feed_url'] for item in response['Items']]
-
-
-def lambda_handler(context, event):  # pylint: disable=inconsistent-return-statements, too-many-locals, too-many-branches, too-many-statements, unused-argument
-    """
-    The main AWS lambda function handler.
-    :param context: The context object. This is not used.
-    :param event: The event object. This is not used.
-    :return: 200 if the function executed successfully, 500 otherwise
-    """
-
-    # Get the feeds for the user
-    rss_feeds = get_user_feeds(USER)
-    for feed_url in rss_feeds:
+def lambda_handler(event, context):
+    for feed_url in RSS_FEEDS:
         # Get the current entries from the RSS feed
         feed = feedparser.parse(feed_url)
 
@@ -131,10 +108,14 @@ def lambda_handler(context, event):  # pylint: disable=inconsistent-return-state
         # Retrieve the last seen entry ID from the database
         try:
             last_seen_id = table.get_item(Key={"id": last_seen_id_key})["Item"]["value"]
-        except:  # pylint: disable=bare-except
+        except:
             last_seen_id = None
 
         # Check if the latest entry is new
+
+        if DEBUG:
+            last_seen_id = random.randint(0, 100000000)
+
         if latest_entry.id != last_seen_id:
             # Print a log message that no new entry was found
             print(
@@ -152,11 +133,12 @@ def lambda_handler(context, event):  # pylint: disable=inconsistent-return-state
                 # Debug
                 if DEBUG:
                     # Print the entry title
-                    print("DEBUG: " + time.strftime("%H:%M:%S") + f" - {entry.title}")
+                    print("DEBUG: " + time.strftime("%H:%M:%S") + f":")
+                    print(json.dumps(entry, indent=4, sort_keys=True))
 
                 if check_entry(entry.id):
-                    # Print a log message that the entry already exists in the database starting
-                    # with the current time in hh:mm:ss format
+                    # Print a log message that the entry already exists in the database starting with the current
+                    # time in hh:mm:ss format
                     print(
                         time.strftime("%H:%M:%S")
                         + ": Entry already exists in database, continuing to next entry"
@@ -188,7 +170,6 @@ def lambda_handler(context, event):  # pylint: disable=inconsistent-return-state
                     "hordaland",
                     "vestland",
                     "trondheim",
-                    "kystradio",
                 ]
 
                 # If DEBUG is enabled, print the ignored keywords
@@ -230,24 +211,27 @@ def lambda_handler(context, event):  # pylint: disable=inconsistent-return-state
                 # Print a log message with the entry title
                 print(f"New entry found: {entry.published} - {entry.title}")
 
-                # Generate the texts for the notification
-                notification_author = f"New Tweet from {entry.author}"
-                notification_text = f"{entry.title}\n({entry.published})\n{entry.link}"
-                notification_subtitle = f"Published: {entry.published}"
-
-                # Send the notification
-                try:
-                    notify(title=notification_author, message=notification_text)
-                    # notify_local(title=notification_author, text=notification_text,
-                    # subtitle="Test", tweet_url=notification_url)
-
-                    # Log the notification
-                    print(
-                        f"Sent notification: {notification_author}: {notification_text} - "
-                        f"{notification_subtitle}"
+                # Check if running on macOS
+                if os.uname().sysname == "Darwin":
+                    # Generate the texts for the notification
+                    notification_author = f"New Tweet from {entry.author}"
+                    notification_text = (
+                        f"{entry.title}\n({entry.published})\n{entry.link}"
                     )
-                except Exception as error:  # pylint: disable=broad-except
-                    print(f"Encountered an error while sending notification: {error}")
+                    notification_subtitle = f"Published: {entry.published}"
+                    notification_url = f"{entry.link}"
+
+                    # Send the notification
+                    try:
+                        notify_local(title=notification_author, text=notification_text, subtitle="Test",
+                                     tweet_url=notification_url)
+
+                        # Log the notification
+                        print(
+                            f"Sent notification: {notification_author}: {notification_text} - {notification_subtitle}"
+                        )
+                    except Exception as e:
+                        print(f"Encountered an error while sending notification: {e}")
 
                 # Add the new tweet to the database
                 try:
@@ -255,39 +239,34 @@ def lambda_handler(context, event):  # pylint: disable=inconsistent-return-state
                     table.put_item(Item={"id": entry.id})
                     print(f"Added entry to database: {entry.id}")
 
-                except Exception as error:  # pylint: disable=broad-except
-                    print(
-                        f"Encountered an error while adding entry to database: {error}"
-                    )
-
-                    return {
-                        "statusCode": 500,
-                        "body": json.dumps(
-                            f"Encountered an error while adding entry to "
-                            f"database: {error}"
-                        ),
-                    }
+                except Exception as e:
+                    print(f"Encountered an error while adding entry to database: {e}")
 
             # Update the last seen entry ID in the database to the latest entry
             try:
                 table.put_item(Item={"id": last_seen_id_key, "value": latest_entry.id})
-            except Exception as error:  # pylint: disable=broad-except
+            except Exception as e:
                 print(
-                    f"Encountered an error while updating {last_seen_id_key} to database: {error}"
+                    f"Encountered an error while updating {last_seen_id_key} to database: {e}"
                 )
-
-                return {
-                    "statusCode": 500,
-                    "body": json.dumps(
-                        f"Encountered an error while updating "
-                        f"{last_seen_id_key} to database: {error}"
-                    ),
-                }
 
         else:
             print(
                 time.strftime("%H:%M:%S")
-                + f": No new entry found for {tweet_author}. Last seen entry ID: {last_seen_id}"
+                + f": No new entry found for {tweet_author}. Waiting for {SLEEP_TIME} seconds before next check "
             )
 
-    return {"statusCode": 200, "body": json.dumps("Ran successfully!")}
+
+if __name__ == "__main__":
+    # Verify that we're not running in AWS Lambda
+    # Verify that notifications are working
+    notify_local(
+        title="Test",
+        text="Test",
+        subtitle="Test",
+        tweet_url="https://nitter.net/politietsorvest/status/1437450000000000000",
+    )
+
+    while True:
+        lambda_handler(None, None)
+        time.sleep(SLEEP_TIME)  # waits for 60 seconds before the next execution
