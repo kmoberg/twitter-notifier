@@ -33,7 +33,7 @@ resource "aws_lambda_function" "twitter_notifier_lambda" {
   source_code_hash = data.archive_file.app_lambda_zip.output_base64sha256
   filename         = data.archive_file.app_lambda_zip.output_path
   layers           = [aws_lambda_layer_version.lambda_layer.arn]
-  timeout = 300
+  timeout          = 300
 
   environment {
     variables = {
@@ -100,7 +100,7 @@ resource "aws_lambda_function" "add_feed_lambda" {
 
   environment {
     variables = {
-      DEBUG = "False"
+      DEBUG           = "False"
       USER_AWS_REGION = var.region
     }
   }
@@ -128,7 +128,7 @@ resource "aws_lambda_function" "add_keyword_lambda" {
 
   environment {
     variables = {
-      DEBUG = "False"
+      DEBUG           = "False"
       USER_AWS_REGION = var.region
     }
   }
@@ -156,7 +156,7 @@ resource "aws_lambda_function" "get_tweets_lambda" {
 
   environment {
     variables = {
-      DEBUG = "False"
+      DEBUG           = "False"
       USER_AWS_REGION = var.region
     }
   }
@@ -184,7 +184,7 @@ resource "aws_lambda_function" "remove_keyword_lambda" {
 
   environment {
     variables = {
-      DEBUG = "False"
+      DEBUG           = "False"
       USER_AWS_REGION = var.region
     }
   }
