@@ -233,6 +233,11 @@ def lambda_handler(context,
                         "vestland",
                         "trondheim",
                         "kystradio",
+                        "trafikkontroll",
+                        "laserkontroll",
+                        "trafikkulykke",
+                        "innbrudd",
+                        "ruspåvirket"
                     ]
 
                     # If DEBUG is enabled, print the ignored keywords
