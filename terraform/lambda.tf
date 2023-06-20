@@ -4,21 +4,19 @@
 data "archive_file" "app_lambda_zip" {
   type        = "zip"
   source_dir  = "../app/app"
-  output_path = "${path.module}/app_lambda.zip"
-
-
+  output_path = "${path.module}/.terraform/zipfiles/app_lambda.zip"
 }
 
 # Create a ZIP file with the requirements/layers
 data "archive_file" "lambda_layer" {
   type        = "zip"
   source_dir  = "../aws-layers/layers"
-  output_path = "${path.module}/lambda_layer.zip"
+  output_path = "${path.module}/.terraform/zipfiles/lambda_layer.zip"
 }
 
 # Create a Lambda Layer
 resource "aws_lambda_layer_version" "lambda_layer" {
-  filename            = "${path.module}/lambda_layer.zip"
+  filename            = data.archive_file.lambda_layer.output_path
   layer_name          = "TwitterNotifierLayers"
   compatible_runtimes = ["python3.10"]
   source_code_hash    = data.archive_file.lambda_layer.output_base64sha256
@@ -65,17 +63,17 @@ resource "aws_cloudwatch_event_target" "every_minute" {
 data "archive_file" "common_lambda_zip" {
   type        = "zip"
   source_dir  = "../app/common"
-  output_path = "${path.module}/common_lambda.zip"
+  output_path = "${path.module}/.terraform/zipfiles/common_lambda.zip"
 }
 
 data "archive_file" "common_lambda_layer" {
   type        = "zip"
   source_dir  = "../aws-layers/layers/"
-  output_path = "${path.module}/common_lambda_layer.zip"
+  output_path = "${path.module}/.terraform/zipfiles/common_lambda_layer.zip"
 }
 
 resource "aws_lambda_layer_version" "common_lambda_layer" {
-  filename            = "${path.module}/common_lambda_layer.zip"
+  filename            = data.archive_file.common_lambda_layer.output_path
   layer_name          = "CommonLambdaLayers"
   compatible_runtimes = ["python3.10"]
   source_code_hash    = data.archive_file.common_lambda_layer.output_base64sha256
@@ -86,7 +84,7 @@ resource "aws_lambda_layer_version" "common_lambda_layer" {
 data "archive_file" "add_feed_lambda_zip" {
   type        = "zip"
   source_dir  = "../app/add_feed"
-  output_path = "${path.module}/add_feed_lambda.zip"
+  output_path = "${path.module}/.terraform/zipfiles/add_feed_lambda.zip"
 }
 
 resource "aws_lambda_function" "add_feed_lambda" {
@@ -113,7 +111,7 @@ resource "aws_lambda_function" "add_feed_lambda" {
 data "archive_file" "add_keyword_lambda_zip" {
   type        = "zip"
   source_dir  = "../app/add_keyword"
-  output_path = "${path.module}/add_keyword_lambda.zip"
+  output_path = "${path.module}/.terraform/zipfiles/add_keyword_lambda.zip"
 }
 
 # Add_feed lambda function
@@ -141,7 +139,7 @@ resource "aws_lambda_function" "add_keyword_lambda" {
 data "archive_file" "get_tweets_lambda_zip" {
   type        = "zip"
   source_dir  = "../app/get_tweets"
-  output_path = "${path.module}/get_tweets_lambda.zip"
+  output_path = "${path.module}/.terraform/zipfiles/get_tweets_lambda.zip"
 }
 
 # Add_feed lambda function
@@ -169,7 +167,7 @@ resource "aws_lambda_function" "get_tweets_lambda" {
 data "archive_file" "remove_keyword_lambda_zip" {
   type        = "zip"
   source_dir  = "../app/remove_keyword"
-  output_path = "${path.module}/remove_keyword_lambda.zip"
+  output_path = "${path.module}/.terraform/zipfiles/remove_keyword_lambda.zip"
 }
 
 # Add_feed lambda function

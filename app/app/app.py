@@ -42,7 +42,7 @@ def get_parameter(name):
         response = ssm.get_parameter(Name=name, WithDecryption=True)
     except Exception as error:  # pylint: disable=broad-except
         print(f"Encountered an error while retrieving parameter: {error}")
-        return None # FIXME - Should we return None or raise an exception?
+        return None  # FIXME - Should we return None or raise an exception?
     return response["Parameter"]["Value"]
 
 
@@ -121,6 +121,13 @@ def get_user_feeds(user):
         KeyConditionExpression=Key('user').eq(user)
     )
     return [item['feed_url'] for item in response['Items']]
+
+
+def get_ignored_keywords():
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('ignored_keywords')
+    response = table.scan()
+    return [item['keyword'] for item in response['Items']]
 
 
 def lambda_handler(context,
@@ -214,31 +221,7 @@ def lambda_handler(context,
                         continue
 
                     # List of keywords to check for in the entry title
-                    ignored_keywords = [
-                        "haugesund",
-                        "stord",
-                        "sveio",
-                        "bømlo",
-                        "tysvær",
-                        "vindafjord",
-                        "brann",
-                        "ørland",
-                        "redningshelikopter rygge",
-                        "arendal",
-                        "oslo",
-                        "bergen",
-                        "oslofjorden",
-                        "sørlandet",
-                        "hordaland",
-                        "vestland",
-                        "trondheim",
-                        "kystradio",
-                        "trafikkontroll",
-                        "laserkontroll",
-                        "trafikkulykke",
-                        "innbrudd",
-                        "ruspåvirket"
-                    ]
+                    ignored_keywords = get_ignored_keywords()
 
                     # If DEBUG is enabled, print the ignored keywords
                     if DEBUG:
