@@ -66,15 +66,13 @@ resource "aws_iam_policy" "lambda_exec_policy" {
     {
       "Effect": "Allow",
       "Action": [
-        "dynamodb:GetItem",
-        "dynamodb:PutItem",
-        "dynamodb:Query",
-        "dynamodb:Scan"
+        "*"
       ],
       "Resource": [
                 "arn:aws:dynamodb:${var.region}:${var.account_id}:table/user_feeds",
                 "arn:aws:dynamodb:${var.region}:${var.account_id}:table/ignored_keywords",
-                "arn:aws:dynamodb:${var.region}:${var.account_id}:table/rss_entries"
+                "arn:aws:dynamodb:${var.region}:${var.account_id}:table/rss_entries",
+                "arn:aws:dynamodb:${var.region}:${var.account_id}:table/politiloggen-entries"
             ]
     }
   ]
